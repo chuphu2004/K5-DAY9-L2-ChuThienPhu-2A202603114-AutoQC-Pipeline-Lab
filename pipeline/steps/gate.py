@@ -20,5 +20,24 @@ from ..common import ERROR, WARN  # noqa: F401
 
 
 def decide(issues, image_stems, cfg, reviewed=frozenset()):
-    # TODO
-    raise NotImplementedError("gate chưa làm")
+    stems = set(image_stems)
+    threshold = cfg["gate"]["warn_ratio_hold"]
+    # đếm MỌI lỗi bắt buộc, kể cả cấp dataset (data.yaml) và ảnh đã duyệt — lỗi không được che
+    n_errors = sum(i.severity == ERROR for i in issues)
+    # set để nhiều cảnh báo trên cùng một ảnh chỉ tính 1 ảnh
+    warn_images = {i.image for i in issues
+                   if i.severity == WARN and i.image in stems and i.image not in reviewed}
+    n_images = len(stems)
+    ratio = len(warn_images) / n_images if n_images else 0.0   # dataset rỗng: tránh chia 0
+
+    if n_errors:
+        decision = "Rework"
+        reasons = [f"còn {n_errors} lỗi bắt buộc (ERROR) — phải sửa trước khi phát hành"]
+    elif ratio >= threshold:
+        decision = "Hold"
+        reasons = [f"{len(warn_images)}/{n_images} ảnh ({ratio:.1%}) còn cảnh báo chưa duyệt, >= ngưỡng {threshold:.1%}"]
+    else:
+        decision = "Release"
+        reasons = [f"không còn lỗi bắt buộc; {len(warn_images)}/{n_images} ảnh ({ratio:.1%}) còn cảnh báo, < ngưỡng {threshold:.1%}"]
+    return dict(decision=decision, n_errors=n_errors, n_warn_images=len(warn_images),
+                n_images=n_images, warn_ratio=round(ratio, 4), reasons=reasons)
