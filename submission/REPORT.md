@@ -1,4 +1,4 @@
-# Báo cáo Day 09 — <Họ và tên>, <MSHV>
+# Báo cáo Day 09 — Chu Thien Phu, 2A202603114
 
 > Xoá mọi `TODO(học viên)` và dòng gợi ý. Mỗi ý trả lời bằng **số lấy từ `submission/reports/`**, kèm mẫu số. Cả báo cáo ~1–2 trang.
 
