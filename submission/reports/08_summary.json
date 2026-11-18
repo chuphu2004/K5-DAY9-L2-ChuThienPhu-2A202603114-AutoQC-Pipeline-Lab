@@ -1,0 +1,18 @@
+{
+  "verdict": {
+    "decision": "Release",
+    "n_errors": 0,
+    "n_warn_images": 19,
+    "n_images": 202,
+    "warn_ratio": 0.0941,
+    "reasons": [
+      "không còn lỗi bắt buộc; 19/202 ảnh (9.4%) còn cảnh báo, < ngưỡng 10.0%"
+    ]
+  },
+  "reviewed": 80,
+  "budget": 80,
+  "seconds": 6.5,
+  "exported": "/home/phu/Documents/AI20K/Lab repos/Day9/K5-DAY9-L2-ChuThienPhu-2A202603114-AutoQC-Pipeline-Lab/submission/export/clean_v1",
+  "config_sha1": "0721bc01546f92f38a87b933d4e66bf0095a34ea",
+  "review_sim_sha1": "7988ca22827f780a7043a2300490e679a1697154"
+}
