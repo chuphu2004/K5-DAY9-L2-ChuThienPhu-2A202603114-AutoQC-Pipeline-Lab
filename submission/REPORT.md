@@ -55,7 +55,20 @@ Khảo sát `conf` trên lô raw (cùng `phash_dist=10`) cho thấy kết luận
 4. **Báo động giả nhiều:** `POSSIBLE_FALSE_POS` có precision 0.31 (11 báo giả / 16 cờ trên calib) và không calibrate được vì `fp_conf` cố định; 9/19 ảnh còn cảnh báo khi Release thuộc loại này.
 
 ## 5. Train: raw vs clean (tùy chọn, chấm riêng)
-Chưa chạy: phần train (Colab) là tùy chọn, chưa thực hiện trong buổi làm bài; ưu tiên hoàn thành phần lõi (pipeline, calibration, báo cáo). Bài được kiểm bằng `make check-core`.
+Train trên Colab (GPU T4): model **yolo26n**, **20 epoch**, imgsz 640, batch 16, **2 seed (0, 1)**, đánh giá trên tập test 100 ảnh. Từ `submission/results/comparison.md`:
+
+| biến thể | #ảnh train | số seed | map50 (TB ± độ lệch) | map50_95 (TB ± độ lệch) | precision (TB ± độ lệch) | recall (TB ± độ lệch) |
+|---|---|---|---|---|---|---|
+| raw | 224 | 2 | 0.726 ± 0.000 | 0.512 ± 0.004 | 0.764 ± 0.061 | 0.649 ± 0.028 |
+| clean | 202 | 2 | 0.709 ± 0.019 | 0.494 ± 0.010 | 0.809 ± 0.010 | 0.601 ± 0.023 |
+
+**Chênh mAP50 (clean − raw) = −0.017**, cùng cỡ với độ lệch chuẩn giữa 2 seed của clean (0.019); với chỉ 2 seed, độ lệch chuẩn ước lượng rất kém. **Kết luận: chưa kết luận được** — số liệu **không** cho thấy clean tốt hơn raw, và mức thấp hơn cũng nằm trong nhiễu. Clean có precision cao hơn (0.809 vs 0.764) nhưng recall thấp hơn (0.601 vs 0.649).
+
+Giả thuyết và cách kiểm:
+1. **Raw được "lợi" nhờ rò rỉ test:** raw còn 5 ảnh `LEAK_TEST` trùng ảnh tập test (và 12 ảnh trùng/gần trùng), nên đo trên test bị thổi phồng. *Kiểm:* đánh giá lại trên test sau khi bỏ 5 ảnh test bị rò rỉ, hoặc train raw đã bỏ riêng 5 ảnh leak.
+2. **Clean ít dữ liệu hơn ~10% (202 vs 224 ảnh) và nhãn người duyệt là mô phỏng:** bỏ ảnh trùng làm giảm số lần model thấy cùng vật, có thể giải thích recall thấp hơn. *Kiểm:* biến thể `raw` chỉ bỏ ảnh trùng/leak (không sửa nhãn) để tách hai tác động.
+3. **Lớp `truck` giảm nhất quán; test chỉ 100 ảnh:** AP50 `truck` của clean thấp hơn raw ở **cả 2 seed** (0.657/0.640 → 0.583/0.544), trong khi `person` gần như không đổi. `truck` chỉ có 40 box trong clean (`class_stats.csv`) và hay bị nhầm với `bus` (vd `img_0020`: nhãn truck, model thấy bus), nên việc người duyệt đổi lớp hoặc máy xoá dòng có thể làm lệch lớp này; với test 100 ảnh, vài box là đủ đổi kết quả. *Kiểm:* so số box `truck`/`bus` giữa raw và clean, xem các ảnh bị đổi lớp trong `06_review_log.csv`; thêm seed (≥ 5) và bootstrap khoảng tin cậy trên test.
+4. **Clean còn nhãn lỗi chưa được duyệt:** 19 ảnh còn cảnh báo (9 `POSSIBLE_FALSE_POS`), cặp trùng `img_0084`/`img_0074` vẫn còn. *Kiểm:* duyệt hết hàng đợi rồi train lại.
 
 ## 6. Quyết định và ghi chú AI
 **(a) Quyết định cuối: Release** `clean_v1` (202 ảnh), kèm ghi chú rủi ro: tỉ lệ cảnh báo 9.4% sát ngưỡng 10%, 9 ảnh `POSSIBLE_FALSE_POS` chưa được người xem, và cặp trùng `img_0084`/`img_0074` vẫn còn trong dataset. Để Release chắc chắn hơn: tăng ngân sách duyệt cho các ảnh FALSE_POS còn lại, và loại tay cặp trùng đã phát hiện.
